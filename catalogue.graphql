@@ -1,0 +1,13 @@
+query Catalogue($after: String) {
+  products(first: 50, after: $after, query: "status:active AND published_status:published") {
+    nodes {
+      id
+      title
+      productType
+      tags
+      complementary: metafield(namespace: "shopify--discovery--product_recommendation", key: "complementary_products") { value }
+      related: metafield(namespace: "shopify--discovery--product_recommendation", key: "related_products") { value }
+    }
+    pageInfo { hasNextPage endCursor }
+  }
+}
