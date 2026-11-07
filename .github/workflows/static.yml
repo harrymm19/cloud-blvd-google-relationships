@@ -2,6 +2,9 @@ name: Build Google relationship feed
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: '17 22 * * *'
+      timezone: 'Australia/Sydney'
 
 permissions:
   contents: read
