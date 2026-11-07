@@ -1,9 +1,16 @@
 {
   "feed_url": "https://files.channable.com/eZdN2UBwSwwe2_BtHJ5SZQ==.xml",
   "api_version": "2026-10",
-  "approved_ranges": ["Francine"],
+  "approved_ranges": [
+    "*"
+  ],
   "range_by_product_id": {},
   "extra_set_pairs": [],
   "blocked_pairs": [],
-  "max_relationships": 30
+  "max_relationships": 30,
+  "role_overrides_by_product_id": {
+    "7853515210815": "shorts",
+    "8060279685183": null,
+    "8060668313663": null
+  }
 }

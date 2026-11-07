@@ -123,7 +123,7 @@ def role(item):
     return {"bras": "bra", "briefs": "bottom", "thongs": "bottom",
             "g-strings": "bottom", "garter belts": "garter",
             "babydolls": "babydoll", "camisoles": "camisole",
-            "shorts": "shorts"}.get(leaf)
+            "shorts": "shorts", "corsets": "corset", "robes": "robe"}.get(leaf)
 
 
 def generate(items, products, config):
@@ -136,8 +136,14 @@ def generate(items, products, config):
             by_product[item["product"]].append(item)
     approved = {norm(x) for x in config["approved_ranges"]}
     overrides = config.get("range_by_product_id", {})
+    role_overrides = config.get("role_overrides_by_product_id", {})
+    def garment_role(item):
+        return role_overrides.get(item["product"], role(item))
     allowed_roles = {frozenset(x) for x in [("bra", "bottom"), ("bra", "garter"),
-                      ("bottom", "garter"), ("babydoll", "bottom"), ("camisole", "shorts")]}
+                      ("bottom", "garter"), ("babydoll", "bottom"), ("camisole", "shorts"),
+                      ("corset", "bottom"), ("corset", "garter"),
+                      ("camisole", "bottom"), ("camisole", "garter"),
+                      ("babydoll", "garter"), ("robe", "camisole"), ("robe", "babydoll")]}
     extra = {frozenset(str(v) for v in pair) for pair in config.get("extra_set_pairs", [])}
     blocked = {tuple(str(v) for v in pair) for pair in config.get("blocked_pairs", [])}
     def range_name(item):
@@ -145,14 +151,15 @@ def generate(items, products, config):
         return norm(overrides.get(item["product"], title.split()[0] if title else ""))
     def bundle(item):
         return ("bundle" in {norm(t) for t in catalogue[item["product"]]["tags"]}
-                or "sets" in item["type"])
+                or re.search(r"\bsets?\b", item["type"]) is not None
+                or re.search(r"\bset\b", catalogue[item["product"]]["title"], re.IGNORECASE) is not None)
     by_style, by_range = collections.defaultdict(list), collections.defaultdict(list)
     for pid, variants in by_product.items():
         for item in variants:
             if item["group"]:
                 by_style[item["group"]].append(item)
             name = range_name(item)
-            if name in approved and item["color"] and not bundle(item) and role(item):
+            if ("*" in approved or name in approved) and item["color"] and not bundle(item) and garment_role(item):
                 by_range[(name, item["color"])].append(item)
     output, audit = {}, []
     limit = config.get("max_relationships", 30)
@@ -163,9 +170,9 @@ def generate(items, products, config):
         def add(kind, target):
             if target["product"] != source["product"] and (source["product"], target["product"]) not in blocked:
                 candidates[(kind, target["product"])].append(target["id"])
-        if not bundle(source) and role(source):
+        if not bundle(source) and garment_role(source):
             for target in by_range.get((range_name(source), source["color"]), []):
-                if frozenset((role(source), role(target))) in allowed_roles:
+                if frozenset((garment_role(source), garment_role(target))) in allowed_roles:
                     add("part_of_set", target)
             for pair in extra:
                 if source["product"] in pair:
